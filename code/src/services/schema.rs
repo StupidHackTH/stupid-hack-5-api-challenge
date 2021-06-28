@@ -29,9 +29,9 @@ impl Query {
                 success: false,
                 info: error.to_string(),
                 kind: None,
-                id_token: None,
-                refresh_token: None,
-                expires_in: None
+                idToken: None,
+                refreshToken: None,
+                expiresIn: None
             }
         }
 
@@ -45,9 +45,9 @@ impl Query {
                 success: false,
                 info: error_response.error.errors[0].clone().message,
                 kind: None,
-                id_token: None,
-                refresh_token: None,
-                expires_in: None
+                idToken: None,
+                refreshToken: None,
+                expiresIn: None
             }
         }
 
@@ -58,9 +58,9 @@ impl Query {
                 success: true,
                 info: "Sign in successfully".to_owned(),
                 kind: Some(token.kind),
-                id_token: Some(token.idToken),
-                refresh_token: Some(token.refreshToken),
-                expires_in: Some(token.expiresIn.parse::<i32>().unwrap())
+                idToken: Some(token.idToken),
+                refreshToken: Some(token.refreshToken),
+                expiresIn: Some(token.expiresIn.parse::<i32>().unwrap())
             }
         }
 
@@ -68,9 +68,9 @@ impl Query {
             success: false,
             info: "Something went wrong".to_owned(),
             kind: None,
-            id_token: None,
-            refresh_token: None,
-            expires_in: None
+            idToken: None,
+            refreshToken: None,
+            expiresIn: None
         }
     }
 }

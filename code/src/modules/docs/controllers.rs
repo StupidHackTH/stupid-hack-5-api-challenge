@@ -33,17 +33,17 @@ async fn documentation() -> HttpResponse {
                         success: true,
                         info: "Response information".to_owned(),
                         kind: Some("Sign in type".to_owned()),
-                        id_token: Some("Token to regenerate refresh token".to_owned()),
-                        refresh_token: Some("Short-live refresh token".to_owned()),
-                        expires_in: Some(3600)
+                        idToken: Some("Token to regenerate refresh token".to_owned()),
+                        refreshToken: Some("Short-live refresh token".to_owned()),
+                        expiresIn: Some(3600)
                     },
                     error: SignInResponse {
                         success: false,
                         info: "Error information".to_owned(),
                         kind: None,
-                        id_token: None,
-                        refresh_token: None,
-                        expires_in: None
+                        idToken: None,
+                        refreshToken: None,
+                        expiresIn: None
                     }
                 }
             },
@@ -62,7 +62,7 @@ async fn documentation() -> HttpResponse {
                     error: SignUpResponse {
                         success: false,
                         info: "Error information".to_owned(),
-                    },
+                    }
                 }
             }
         })

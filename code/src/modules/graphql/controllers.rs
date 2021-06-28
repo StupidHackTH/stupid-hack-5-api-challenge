@@ -31,6 +31,6 @@ async fn graphiql() -> HttpResponse {
 pub fn api(config: &mut ServiceConfig) {
     config
         .service(status)
-        // .service(graphiql)
+        .service(graphiql)
         .service(graphql);
 }

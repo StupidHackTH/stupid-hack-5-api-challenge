@@ -1,3 +1,4 @@
+#![allow(non_snake_case)]
 use juniper::GraphQLObject;
 
 use serde::Serialize;
@@ -13,7 +14,7 @@ pub struct SignInResponse {
     pub success: bool,
     pub info: String,
     pub kind: Option<String>,
-    pub id_token: Option<String>,
-    pub refresh_token: Option<String>,
-    pub expires_in: Option<i32>
+    pub idToken: Option<String>,
+    pub refreshToken: Option<String>,
+    pub expiresIn: Option<i32>
 }
