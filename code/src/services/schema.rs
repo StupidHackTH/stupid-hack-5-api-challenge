@@ -1,14 +1,33 @@
 use std::env;
 
-use juniper::{graphql_object, EmptySubscription, RootNode};
+use juniper::{graphql_object, EmptySubscription, RootNode, Context};
 
-use crate::models::{firebase::{FirebaseEmailSignError, FirebaseEmailSignUp, FirebaseToken}, graphql::{SignInResponse, SignUpResponse}};
+use crate::models::{
+    firebase::{
+        FirebaseEmailSignError, 
+        FirebaseEmailSignUp, 
+        FirebaseToken
+    }, 
+    graphql::{
+        ReserveTicketResponse, 
+        SignInResponse, 
+        SignUpResponse
+    }
+};
 
-use reqwest::Client;
+use reqwest::{ Client, header };
+
+use super::users::profile::services::get_profile;
+
+pub struct RequestContext {
+    pub authorization: String
+}
+
+impl Context for RequestContext {}
 
 pub struct Query;
 
-#[graphql_object]
+#[graphql_object(context = RequestContext)]
 impl Query {
     pub async fn signin(email: String, password: String) -> SignInResponse {
         let http = Client::new();
@@ -29,14 +48,14 @@ impl Query {
                 success: false,
                 info: error.to_string(),
                 kind: None,
+                localId: None,
                 idToken: None,
                 refreshToken: None,
                 expiresIn: None
             }
         }
 
-        let response = request.unwrap();
-        let response_string = response.text().await.unwrap().clone();
+        let response_string = request.unwrap().text().await.unwrap().clone();
 
         let error = serde_json::from_str::<FirebaseEmailSignError>(&response_string);
 
@@ -45,6 +64,7 @@ impl Query {
                 success: false,
                 info: error_response.error.errors[0].clone().message,
                 kind: None,
+                localId: None,
                 idToken: None,
                 refreshToken: None,
                 expiresIn: None
@@ -58,6 +78,7 @@ impl Query {
                 success: true,
                 info: "Sign in successfully".to_owned(),
                 kind: Some(token.kind),
+                localId: Some(token.localId),
                 idToken: Some(token.idToken),
                 refreshToken: Some(token.refreshToken),
                 expiresIn: Some(token.expiresIn.parse::<i32>().unwrap())
@@ -68,6 +89,7 @@ impl Query {
             success: false,
             info: "Something went wrong".to_owned(),
             kind: None,
+            localId: None,
             idToken: None,
             refreshToken: None,
             expiresIn: None
@@ -77,7 +99,7 @@ impl Query {
 
 pub struct Mutation;
 
-#[graphql_object]
+#[graphql_object(context = RequestContext)]
 impl Mutation {
     pub async fn signup(email: String, password: String, confirm_password: String) -> SignUpResponse {
         if password != confirm_password {
@@ -107,9 +129,7 @@ impl Mutation {
             }
         }
 
-        let response = request.unwrap();
-
-        let error = response.json::<FirebaseEmailSignError>().await;
+        let error = request.unwrap().json::<FirebaseEmailSignError>().await;
 
         if let Ok(error_response) = error {
             return SignUpResponse {
@@ -123,9 +143,46 @@ impl Mutation {
             info: "Sign up successfully".to_owned()
         }
     }
+
+    pub async fn reserve(context: &RequestContext, note: Option<String>) -> ReserveTicketResponse {
+        let profile = get_profile(&context.authorization.replace("Bearer ", "")).await;
+
+        if profile.is_err() {
+            let error = profile.err().unwrap().error;
+
+            return ReserveTicketResponse {
+                success: false,
+                info: error.message,
+                ticketId: None
+            };
+        }
+
+        let profile = profile.unwrap();
+        let project_id = env::var("project_id").expect("Firebase Project Id not found");
+        let http = Client::new();
+
+        let url = format!("https://firestore.googleapis.com/v1/projects/{}/databases/(default)/collectionGroups/reserve/{}", project_id, profile.localId);
+   
+        let request = http
+            .post(url)
+            .header(header::AUTHORIZATION, &context.authorization)
+            .send()
+            .await
+            .unwrap();
+
+        let response = request.text().await.unwrap();
+
+        println!("{:?}", response);
+
+        ReserveTicketResponse {
+            success: true,
+            info: "Reserved successfully".to_owned(),
+            ticketId: None
+        }
+    }
 }
 
-pub type Schema = RootNode<'static, Query, Mutation, EmptySubscription<()>>;
+pub type Schema = RootNode<'static, Query, Mutation, EmptySubscription<RequestContext>>;
 
 pub fn create_schema() -> Schema {
     Schema::new(

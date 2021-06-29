@@ -33,6 +33,7 @@ async fn documentation() -> HttpResponse {
                         success: true,
                         info: "Response information".to_owned(),
                         kind: Some("Sign in type".to_owned()),
+                        localId: Some("Your UID".to_owned()),
                         idToken: Some("Token to regenerate refresh token".to_owned()),
                         refreshToken: Some("Short-live refresh token".to_owned()),
                         expiresIn: Some(3600)
@@ -41,6 +42,7 @@ async fn documentation() -> HttpResponse {
                         success: false,
                         info: "Error information".to_owned(),
                         kind: None,
+                        localId: None,
                         idToken: None,
                         refreshToken: None,
                         expiresIn: None

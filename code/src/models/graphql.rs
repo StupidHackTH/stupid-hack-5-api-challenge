@@ -14,7 +14,15 @@ pub struct SignInResponse {
     pub success: bool,
     pub info: String,
     pub kind: Option<String>,
+    pub localId: Option<String>,
     pub idToken: Option<String>,
     pub refreshToken: Option<String>,
     pub expiresIn: Option<i32>
+}
+
+#[derive(Serialize, GraphQLObject, Clone)]
+pub struct ReserveTicketResponse {
+    pub success: bool,
+    pub info: String,
+    pub ticketId: Option<String>
 }

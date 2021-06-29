@@ -10,11 +10,11 @@ pub struct FirebaseEmailSignUp {
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct FirebaseEmailSignError {
-    pub error: FirebaseEmailSignUpErrorInfo
+    pub error: FirebaseEmailErrorInfo
 }
 
 #[derive(Deserialize, Clone, Debug)]
-pub struct FirebaseEmailSignUpErrorInfo {
+pub struct FirebaseEmailErrorInfo {
     pub code: u16,
     pub message: String,
     pub errors: Vec<FirebaseEmailSignErrorDetail>
