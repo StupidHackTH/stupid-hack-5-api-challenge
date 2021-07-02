@@ -1,6 +1,13 @@
+#![allow(non_snake_case)]
 use serde::Serialize;
 
-use super::graphql::{SignInResponse, SignUpResponse};
+use super::{
+    dispenser::DispenserResponse, 
+    graphql::{
+        SignInResponse,
+        SignUpResponse
+    }
+};
 
 #[derive(Serialize)]
 pub struct DocumentationType {
@@ -18,15 +25,22 @@ pub struct DocumentationQuery {
 
 #[derive(Serialize)]
 pub struct DocumentationMutation {
-    pub signup: DocumentationInput<SignUpMutationInput, SignUpResponse>
+    pub signup: DocumentationInput<SignUpMutationInput, SignUpResponse>,
+    pub reserve: DocumentationInput<(), DispenserResponse>
 }
 
 #[derive(Serialize)]
 pub struct DocumentationInput<K, V> {
-    pub http_verb: &'static str,
-    pub input: K,
+    pub httpVerb: &'static str,
+    pub header: DocumentationHeaderRequest,
+    pub input: Option<K>,
     pub response: V,
     pub error: V
+}
+
+#[derive(Serialize)]
+pub struct DocumentationHeaderRequest {
+    pub authorization: Option<&'static str>
 }
 
 #[derive(Serialize)]
@@ -39,5 +53,5 @@ pub struct SignInQueryInput {
 pub struct SignUpMutationInput {
     pub email: String, 
     pub password: String, 
-    pub confirm_password: String
+    pub confirmPassword: String
 }

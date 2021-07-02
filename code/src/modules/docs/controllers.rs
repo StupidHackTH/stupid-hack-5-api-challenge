@@ -1,21 +1,23 @@
 use actix_web::{HttpResponse, get, http::header, web::ServiceConfig};
 
 use crate::models::{
+    dispenser::DispenserResponse, 
     docs::{
         DocumentationInput, 
         DocumentationMutation, 
         DocumentationQuery, 
         DocumentationType, 
         SignInQueryInput, 
-        SignUpMutationInput
-    }, 
+        SignUpMutationInput,
+        DocumentationHeaderRequest
+    },
     graphql::{
         SignInResponse, 
         SignUpResponse
     }
 };
 
-#[get("/")]
+#[get("/docs")]
 async fn documentation() -> HttpResponse {
     HttpResponse::Ok()
         .append_header(header::ContentType::html())
@@ -24,11 +26,14 @@ async fn documentation() -> HttpResponse {
             endpoint: "/graphql",
             query: DocumentationQuery {
                 signin: DocumentationInput {
-                    http_verb: "POST",
-                    input: SignInQueryInput {
+                    httpVerb: "POST",
+                    header: DocumentationHeaderRequest {
+                        authorization: None
+                    },
+                    input: Some(SignInQueryInput {
                         email: "Your email".to_owned(),
                         password: "Your registered password".to_owned()
-                    },
+                    }),
                     response: SignInResponse {
                         success: true,
                         info: "Response information".to_owned(),
@@ -51,12 +56,15 @@ async fn documentation() -> HttpResponse {
             },
             mutation: DocumentationMutation {
                 signup: DocumentationInput {
-                    http_verb: "POST",
-                    input: SignUpMutationInput {
+                    httpVerb: "POST",
+                    header: DocumentationHeaderRequest {
+                        authorization: None
+                    },
+                    input: Some(SignUpMutationInput {
                         email: "Your email".to_owned(),
                         password: "Your registered password".to_owned(),
-                        confirm_password: "Must match password field".to_owned()
-                    },
+                        confirmPassword: "Must match password field".to_owned()
+                    }),
                     response: SignUpResponse {
                         success: true,
                         info: "Response information".to_owned(),
@@ -64,6 +72,23 @@ async fn documentation() -> HttpResponse {
                     error: SignUpResponse {
                         success: false,
                         info: "Error information".to_owned(),
+                    }
+                },
+                reserve: DocumentationInput {
+                    httpVerb: "POST",
+                    header: DocumentationHeaderRequest {
+                        authorization: Some("ID Token")
+                    },
+                    input: None,
+                    response: DispenserResponse {
+                        success: true,
+                        info: "Info about reservation".to_owned(),
+                        ticket: Some("Ticket reservation code".to_owned())
+                    },
+                    error: DispenserResponse {
+                        success: false,
+                        info: "Error information".to_owned(),
+                        ticket: None,
                     }
                 }
             }

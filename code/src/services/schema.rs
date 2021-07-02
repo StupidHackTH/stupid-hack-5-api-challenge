@@ -1,21 +1,25 @@
+#![allow(non_snake_case)]
 use std::env;
 
 use juniper::{graphql_object, EmptySubscription, RootNode, Context};
 
 use crate::models::{
+    dispenser::{
+        DispenserRequest, 
+        DispenserResponse
+    }, 
     firebase::{
         FirebaseEmailSignError, 
         FirebaseEmailSignUp, 
         FirebaseToken
     }, 
     graphql::{
-        ReserveTicketResponse, 
         SignInResponse, 
         SignUpResponse
     }
 };
 
-use reqwest::{ Client, header };
+use reqwest::Client;
 
 use super::users::profile::services::get_profile;
 
@@ -101,8 +105,8 @@ pub struct Mutation;
 
 #[graphql_object(context = RequestContext)]
 impl Mutation {
-    pub async fn signup(email: String, password: String, confirm_password: String) -> SignUpResponse {
-        if password != confirm_password {
+    pub async fn signup(email: String, password: String, confirmPassword: String) -> SignUpResponse {
+        if password != confirmPassword {
             return SignUpResponse {
                 success: false,
                 info: "Confirm password is not match".to_owned()
@@ -131,10 +135,14 @@ impl Mutation {
 
         let error = request.unwrap().json::<FirebaseEmailSignError>().await;
 
-        if let Ok(error_response) = error {
+        if let Ok(response) = error {
             return SignUpResponse {
                 success: false,
-                info: error_response.error.errors[0].clone().message
+                info: response
+                    .error
+                    .errors[0]
+                    .clone()
+                    .message
             }
         }
 
@@ -144,40 +152,66 @@ impl Mutation {
         }
     }
 
-    pub async fn reserve(context: &RequestContext, note: Option<String>) -> ReserveTicketResponse {
+    pub async fn reserve(context: &RequestContext) -> DispenserResponse {
         let profile = get_profile(&context.authorization.replace("Bearer ", "")).await;
 
         if profile.is_err() {
             let error = profile.err().unwrap().error;
 
-            return ReserveTicketResponse {
+            return DispenserResponse {
                 success: false,
                 info: error.message,
-                ticketId: None
+                ticket: None
             };
         }
 
         let profile = profile.unwrap();
-        let project_id = env::var("project_id").expect("Firebase Project Id not found");
         let http = Client::new();
-
-        let url = format!("https://firestore.googleapis.com/v1/projects/{}/databases/(default)/collectionGroups/reserve/{}", project_id, profile.localId);
-   
-        let request = http
-            .post(url)
-            .header(header::AUTHORIZATION, &context.authorization)
+        let challenge_key = env::var("challenge_key").expect("API Challenge key not found");
+        let url = "https://sth5-dispenser.saltyaom.com/dispenser/unassign-challenge";
+        
+        let request = http.post(url)
+            .json(&DispenserRequest {
+                email: profile.email,
+                key: challenge_key,
+                production: env::var("production").unwrap_or("".to_owned()) == "true"
+            })
             .send()
-            .await
-            .unwrap();
+            .await;
 
-        let response = request.text().await.unwrap();
+            if let Err(error) = request {
+                return DispenserResponse {
+                    success: false,
+                    info: error.to_string(),
+                    ticket: None
+                }
+            }
+    
+        let dispenser = request.unwrap().json::<DispenserResponse>().await;
 
-        println!("{:?}", response);
-
-        ReserveTicketResponse {
-            success: true,
-            info: "Reserved successfully".to_owned(),
-            ticketId: None
+        match dispenser {
+            Ok(dispense) => {
+                if dispense.success {
+                    DispenserResponse {
+                        success: true,
+                        info: "Reserved successfully, please use the ticket code to serve ticket at EventPop.".to_owned(),
+                        ticket: dispense.ticket
+                    }
+                } else {
+                    DispenserResponse {
+                        success: false,
+                        info: dispense.info,
+                        ticket: None
+                    }
+                }
+            },
+            Err(error) => {
+                DispenserResponse {
+                    success: false,
+                    info: error.to_string(),
+                    ticket: None
+                }
+            }
         }
     }
 }

@@ -19,10 +19,3 @@ pub struct SignInResponse {
     pub refreshToken: Option<String>,
     pub expiresIn: Option<i32>
 }
-
-#[derive(Serialize, GraphQLObject, Clone)]
-pub struct ReserveTicketResponse {
-    pub success: bool,
-    pub info: String,
-    pub ticketId: Option<String>
-}

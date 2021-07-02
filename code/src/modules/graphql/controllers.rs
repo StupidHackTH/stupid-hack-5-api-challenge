@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{ env, sync::Arc };
 use actix_web::{Error, HttpRequest, HttpResponse, get, post, web::{Data, Json, ServiceConfig}};
 
 use juniper::http::{ GraphQLRequest, graphiql::graphiql_source };
@@ -51,6 +51,9 @@ async fn graphiql() -> HttpResponse {
 pub fn api(config: &mut ServiceConfig) {
     config
         .service(status)
-        .service(graphiql)
         .service(graphql);
+
+    if env::var("production").unwrap_or("".to_owned()) != "true" {
+        config.service(graphiql);
+    }
 }
